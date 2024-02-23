@@ -1,6 +1,24 @@
-import productModal from "./productModal.js";
+const { createPinia } = Pinia;
+const { mapState, mapActions } = Pinia
 
-// VeeValidate 規則
+/* 元件匯入 */
+import productModal from "./components/productModal.js";
+import pagination from "./components/pagination.js";
+import filterCategory from "./components/filterCategory.js";
+import navbar from "./components/navbar.js";
+import toastMessage from "./components/toastMessage.js";
+
+/* store 匯入 */
+import productStore from "./store/productStore.js";
+import categoryStore from "./store/categoryStore.js";
+import cartStore from "./store/cartStore.js";
+import loadingStore from "./store/loadingStore.js";
+
+/* 全域資料 */
+const apiUrl = 'https://vue3-course-api.hexschool.io/v2';
+const apiPath = 'winnie05';
+
+/* VeeValidate 規則 */
 Object.keys(VeeValidateRules).forEach(rule => {
   if (rule !== 'default') {
     VeeValidate.defineRule(rule, VeeValidateRules[rule]);
@@ -8,173 +26,143 @@ Object.keys(VeeValidateRules).forEach(rule => {
 });
 
 // 讀取外部的資源
-VeeValidateI18n.loadLocaleFromURL('./zh_TW.json');
+VeeValidateI18n.loadLocaleFromURL('./components/zh_TW.json');
 
-// Activate the locale 套用語系檔案
+// 套用語系檔案
 VeeValidate.configure({
   generateMessage: VeeValidateI18n.localize('zh_TW'),
-  validateOnInput: true, // 輸入文字時，是否立即進行驗證
+  validateOnInput: true, // 輸入文字時，就立即進行驗證
 });
 
+/* Vue */
 const app = Vue.createApp({
   data() {
     return {
-      apiUrl: 'https://ec-course-api.hexschool.io/v2',
-      apiPath: 'winnie05',
-      products: [],
-      showProduct: {},
-      cart: [],
-      isLoading: true,
+      //產品細項
+      productDetail: {},
+      //訂單欄位
       form: {
-          user: {
-              name: '',
-              email: '',
-              tel: '',
-              address: '',
-          },
-          message: '',
+        user: {
+          email: "",
+          tel: "",
+          address: "",
+        },
+        message: ""
       },
     }
   },
   methods: {
-    // 取得所有產品資訊
-    getProducts() {
-        axios.get(`${this.apiUrl}/api/${this.apiPath}/products`)
-            .then(res => {
-                this.products = res.data.products;
-                this.isLoading = false;
-            })
-            .catch(err => {
-              alert(err.response.data.message);
-            });
+    ...mapActions(productStore, ['getProductList']),
+    ...mapActions(categoryStore, ['getCategoryList']),
+    ...mapActions(cartStore, ['getCartsList', 'addToCart', 'updateCart', 'deleteCartItem', 'clearCartsList']),
+    ...mapActions(loadingStore, ['toggleLoading']),
+
+    //取得產品細項
+    getProductDetail(id) {
+      //資料處理
+      const url = `${apiUrl}/api/${apiPath}/product/${id}`
+      axios.get(url)
+        .then(res => {
+          const product = res.data.product
+          this.productDetail = {
+            product,
+            currentImage: product.imageUrl,
+            imagesStock: [product.imageUrl, ...product.imagesUrl]
+          }
+
+          //開啟 modal
+          this.$refs.productModal.openModal()
+        })
+        .catch(err => Swal.fire(
+          {
+            icon: "error",
+            text: err.response.data.message
+          }
+        ))
     },
-    getProduct(id) {
-      const url = `${apiUrl}/api/${apiPath}/product/${id}`;
-      this.loadingStatus.loadingItem = id;
-      axios.get(url).then((response) => {
-        this.loadingStatus.loadingItem = '';
-        this.product = response.data.product;
-        this.$refs.userProductModal.openModal();
-      }).catch((err) => {
-        alert(err.response.data.message);
-      });
-    },
-    // spinner
-    toggleSpinner(id, refName) {
-        const spinnerArray = this.$refs[refName + id];
-        const spinner = spinnerArray[0];
-        spinner.classList.remove('d-none');
-        spinner.classList.add('d-block');
-        setTimeout(() => {
-            spinner.classList.remove('d-block');
-            spinner.classList.add('d-none');
-        }, 500)
-    },
-    // 打開 modal
-    openModal(id) {
-        this.showProduct = this.products.find(item => item.id === id);
-        this.toggleSpinner(id, 'spinner');
-        setTimeout(() => {
-            this.$refs.productModal.openModal();
-        }, 500);
-    },
-    // 加入購物車
-    addCart(id, qty = 1) {
-        this.toggleSpinner(id, 'cartSpinner');
-        setTimeout(() => {
-            this.$refs.productModal.hideModal();
-        }, 550);
-        const cart = {
-            qty,
-            "product_id": id
-        };
-        axios.post(`${this.apiUrl}/api/${this.apiPath}/cart`, { "data": cart })
-            .then(res => {
-                alert(res.data.message);
-                this.getCart();
-            })
-            .catch(err => {
-                console.log(err);
-            });
-    },
-    // 取得購物車
-    getCart() {
-        axios.get(`${this.apiUrl}/api/${this.apiPath}/cart`)
-            .then((res) => {
-                this.cart = res.data.data;
-            }).catch((err) => {
-                console.log(err);
-            });
-    },
-    // 更新購物車品項數量
-    updateItem(item) {
-        const cart = {
-            "qty": item.qty,
-            "product_id": item.product_id
-        };
-        axios.put(`${this.apiUrl}/api/${this.apiPath}/cart/${item.id}`, { "data": cart })
-            .then((res) => {
-                alert(res.data.message);
-                this.getCart();
-            }).catch((err) => {
-                console.log(err);
-            });
-    },
-    // 刪除單一購物車品項
-    delItem(id) {
-        this.toggleSpinner(id, 'delSpinner');
-        axios.delete(`${this.apiUrl}/api/${this.apiPath}/cart/${id}`)
-            .then(res => {
-                alert(res.data.message);
-                this.getCart();
-            })
-            .catch(err => {
-                console.log(err);
-            });
-    },
-    // 清空購物車
-    delCart() {
-        axios.delete(`${this.apiUrl}/api/${this.apiPath}/carts`)
-            .then(res => {
-                alert(res.data.message);
-                this.getCart();
-            })
-            .catch(err => {
-                console.log(err);
-            });
-    },
-    // 表單-手機驗證
-    isPhone(value) {
-      const phoneNumber = /^(09)[0-9]{8}$/
-      return phoneNumber.test(value) ? true : '請輸入09開頭的手機號碼'
-    },
-    // 表單-提交
-    onSubmit() {
-      const url = `${apiUrl}/api/${apiPath}/order`;
-      const order = this.form;
-      axios.post(url, { data: order }).then((response) => {
-        alert(response.data.message);
-        this.$refs.form.resetForm();
-        this.getCart();
-      }).catch((err) => {
-        alert(err.response.data.message);
-      });
+
+    //送出訂單
+    submitOrder() {
+      //檢查購物車是否為空
+      if (!cartList.length) {
+        Swal.fire("購物車內沒有商品")
+        return
+      }
+
+      //開啟 loading
+      this.toggleLoading()
+
+      //資料處理
+      const url = `${apiUrl}/api/${apiPath}/order`
+      const order = {
+        data: this.form
+      }
+
+      
+
+      axios.post(url, order)
+        .then(res => {
+          //提示訊息
+          Swal.fire(res.data.message)
+          //清除表單
+          this.$refs.form.resetForm();
+          //重整購物車
+          this.getCartsList()
+        })
+        .catch(err => Swal.fire(
+            {
+              icon: "error",
+              text: err.response.data.message
+            }
+          )
+          )
+        .finally(() => {
+          //關閉 loading
+          this.toggleLoading()
+        })
     }
   },
+  computed: {
+    ...mapState(productStore, ['productsList', 'pagination']),
+    ...mapState(categoryStore, ['categoryList']),
+    ...mapState(cartStore, ['cartsList']),
+    ...mapState(loadingStore, ['isLoading'])
+  },
   mounted() {
-    this.getProduct();
-    this.getCart();
-  }
-});
+    this.getProductList()
+    this.getCartsList()
+    this.getCategoryList()
+  },
+})
+
+
+
+
+//導覽列
+app.component("navbar", navbar)
 
 //產品 Modal
-app.component('productModal', productModal);
-// Vue Loading
-app.component('loading', VueLoading.Component);
-// VeeValidate 註冊
+app.component("productModal", productModal)
+
+//產品分類篩選
+app.component("filterCategory", filterCategory)
+
+//頁碼
+app.component("pagination", pagination)
+
+//通知 toast
+app.component("toastMessage", toastMessage)
+
+/* Vue Loading */
+app.component("loading", VueLoading.Component)
+
+/* VeeValidate 註冊 */
 app.component('VForm', VeeValidate.Form);
 app.component('VField', VeeValidate.Field);
 app.component('ErrorMessage', VeeValidate.ErrorMessage);
 
-app.use(VueLoading.LoadingPlugin);
-app.mount('#app');
+/* Pinia */
+const pinia = createPinia()
+app.use(pinia)
+
+app.mount("#app")
