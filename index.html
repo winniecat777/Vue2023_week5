@@ -183,7 +183,7 @@ https://cdn.jsdelivr.net/npm/sweetalert2@11.10.4/dist/sweetalert2.min.css
           <div class="mb-3">
             <label for="tel" class="form-label has-required">收件人電話</label>
             <v-field id="tel" name="tel" type="tel" class="form-control" :class="{ 'is-invalid': errors['tel'] }"
-              placeholder="請輸入電話" rules="required|min:8|max:10" v-model="form.user.tel"></v-field>
+              placeholder="請輸入電話" :rules="isPhone" v-model="form.user.tel"></v-field>
             <error-message name="tel" class="invalid-feedback"></error-message>
           </div>
 

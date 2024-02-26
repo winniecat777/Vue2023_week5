@@ -80,11 +80,15 @@ const app = Vue.createApp({
           }
         ))
     },
-
+    // 表單-手機驗證
+    isPhone(value) {
+      const phoneNumber = /^(09)[0-9]{8}$/
+      return phoneNumber.test(value) ? true : '請輸入09開頭的手機號碼'
+  },
     //送出訂單
     submitOrder() {
       //檢查購物車是否為空
-      if (!cartList.length) {
+      if (!cartsList.length) {
         Swal.fire("購物車內沒有商品")
         return
       }
@@ -97,8 +101,6 @@ const app = Vue.createApp({
       const order = {
         data: this.form
       }
-
-      
 
       axios.post(url, order)
         .then(res => {
