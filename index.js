@@ -93,34 +93,34 @@ const app = Vue.createApp({
         return
       }else{
         //開啟 loading
-      this.toggleLoading()
+        this.toggleLoading()
 
-      //資料處理
-      const url = `${apiUrl}/api/${apiPath}/order`
-      const order = {
-        data: this.form
-      }
+        //資料處理
+        const url = `${apiUrl}/api/${apiPath}/order`
+        const order = {
+          data: this.form
+        }
 
-      axios.post(url, order)
-        .then(res => {
-          //提示訊息
-          Swal.fire(res.data.message)
-          //清除表單
-          this.$refs.form.resetForm();
-          //重整購物車
-          this.getCartsList()
-        })
-        .catch(err => Swal.fire(
-            {
-              icon: "error",
-              text: err.response.data.message
-            }
-          )
-          )
-        .finally(() => {
-          //關閉 loading
-          this.toggleLoading()
-        })
+        axios.post(url, order)
+          .then(res => {
+            //提示訊息
+            Swal.fire(res.data.message)
+            //清除表單
+            this.$refs.form.resetForm();
+            //重整購物車
+            this.getCartsList()
+          })
+          .catch(err => Swal.fire(
+              {
+                icon: "error",
+                text: err.response.data.message
+              }
+            )
+            )
+          .finally(() => {
+            //關閉 loading
+            this.toggleLoading()
+          })
       }   
     }
   },
