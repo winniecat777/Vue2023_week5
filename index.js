@@ -47,7 +47,7 @@ const app = Vue.createApp({
           tel: "",
           address: "",
         },
-        message: ""
+        message: "",
       },
     }
   },
@@ -84,16 +84,15 @@ const app = Vue.createApp({
     isPhone(value) {
       const phoneNumber = /^(09)[0-9]{8}$/
       return phoneNumber.test(value) ? true : '請輸入09開頭的手機號碼'
-  },
+    },
     //送出訂單
     submitOrder() {
       //檢查購物車是否為空
       if (!cartsList.length) {
         Swal.fire("購物車內沒有商品")
         return
-      }
-
-      //開啟 loading
+      }else{
+        //開啟 loading
       this.toggleLoading()
 
       //資料處理
@@ -122,6 +121,7 @@ const app = Vue.createApp({
           //關閉 loading
           this.toggleLoading()
         })
+      }   
     }
   },
   computed: {
