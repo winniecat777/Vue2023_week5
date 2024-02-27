@@ -88,7 +88,7 @@ const app = Vue.createApp({
     //送出訂單
     submitOrder() {
       //檢查購物車是否為空
-      if (!cartsList.length) {
+      if (!this.cartsList.carts.length) {
         Swal.fire("購物車內沒有商品")
         return
       }else{
